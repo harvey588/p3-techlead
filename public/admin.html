@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Technical Conversation — Admin</title>
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    :root {
+      --bg: #0D0D0C; --bg2: #161614; --card: #1C1C1A; --border: #2A2A27;
+      --text: #E8E8E4; --muted: #8A8A84; --faint: #5A5A55;
+      --accent: #B8944F; --green: #5B9A6B; --red: #C45A5A; --amber: #C4963E;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap');
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 32px; }
+    h1 { font-size: 18px; font-weight: 400; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 40px; }
+
+    .auth-gate { display: flex; align-items: center; justify-content: center; min-height: 80vh; }
+    .auth-box { text-align: center; }
+    .auth-box input { background: var(--bg2); border: 1px solid var(--border); color: var(--text); padding: 14px 20px; font-size: 14px; width: 300px; font-family: 'JetBrains Mono', monospace; }
+    .auth-box input:focus { outline: none; border-color: var(--accent); }
+    .auth-box button { background: var(--accent); color: #fff; border: none; padding: 14px 32px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; margin-top: 16px; }
+
+    .tabs { display: flex; gap: 2px; margin-bottom: 32px; }
+    .tab { padding: 10px 20px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); background: var(--bg2); border: none; cursor: pointer; font-family: 'JetBrains Mono', monospace; }
+    .tab.active { color: var(--accent); background: var(--card); }
+
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); padding: 20px; }
+    .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .stat-value { font-size: 28px; font-weight: 600; }
+
+    .candidate-grid { display: flex; flex-direction: column; gap: 2px; }
+    .candidate-row { background: var(--card); border: 1px solid var(--border); padding: 20px; display: grid; grid-template-columns: 200px 100px 120px 100px 1fr 120px; align-items: center; gap: 16px; cursor: pointer; transition: border-color 0.2s; }
+    .candidate-row:hover { border-color: var(--accent); }
+    .candidate-name { font-weight: 500; font-size: 15px; }
+    .badge { display: inline-block; padding: 4px 10px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
+    .badge-hire { background: rgba(91,154,107,0.15); color: var(--green); }
+    .badge-nohire { background: rgba(196,90,90,0.15); color: var(--red); }
+    .badge-uncertain { background: rgba(196,150,62,0.15); color: var(--amber); }
+    .badge-pending { background: rgba(138,138,132,0.1); color: var(--muted); }
+
+    .detail-panel { background: var(--card); border: 1px solid var(--border); padding: 32px; margin-top: 16px; }
+    .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .detail-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; }
+    .summary-text { font-size: 14px; line-height: 1.8; color: var(--text); margin-bottom: 24px; white-space: pre-wrap; }
+    .trap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-bottom: 24px; }
+    .trap-item { padding: 12px; border: 1px solid var(--border); font-size: 12px; }
+    .trap-caught { border-color: var(--green); color: var(--green); }
+    .trap-missed { border-color: var(--red); color: var(--red); }
+
+    .qa-log { max-height: 600px; overflow-y: auto; }
+    .qa-item { padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .qa-q { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .qa-a { font-size: 14px; color: var(--text); line-height: 1.6; }
+    .qa-meta { font-size: 11px; color: var(--faint); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+    .token-section { margin-top: 32px; }
+    .create-form { display: flex; gap: 8px; margin-bottom: 24px; }
+    .create-form input { background: var(--bg2); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; font-size: 13px; flex: 1; }
+    .create-form input:focus { outline: none; border-color: var(--accent); }
+    .create-form button { background: var(--accent); color: #fff; border: none; padding: 10px 24px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+
+    .token-list { display: flex; flex-direction: column; gap: 2px; }
+    .token-row { background: var(--bg2); padding: 14px 16px; display: grid; grid-template-columns: 180px 100px 1fr 100px; gap: 12px; align-items: center; font-size: 13px; }
+    .token-link { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); word-break: break-all; cursor: pointer; }
+    .token-link:hover { text-decoration: underline; }
+
+    .message-tpl { background: var(--bg2); border: 1px solid var(--border); padding: 20px; margin-top: 24px; font-size: 13px; line-height: 1.8; color: var(--text); white-space: pre-wrap; }
+    .copy-btn { background: var(--accent); color: #fff; border: none; padding: 8px 20px; font-size: 11px; letter-spacing: 1px; cursor: pointer; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container" id="app"></div>
+  <script>
+    let adminKey = localStorage.getItem('p3_admin_key') || '';
+    let activeTab = 'candidates';
+    let sessions = [], tokens = [], traps = [], selectedSession = null, detailLog = null;
+
+    function render() {
+      const app = document.getElementById('app');
+      if (!adminKey) { app.innerHTML = renderAuth(); return; }
+      app.innerHTML = `
+        <h1>The Technical Conversation</h1>
+        <p class="subtitle">Technical Lead Assessment Dashboard</p>
+        ${renderTabs()}
+        ${activeTab === 'candidates' ? renderCandidates() : ''}
+        ${activeTab === 'tokens' ? renderTokens() : ''}
+        ${activeTab === 'message' ? renderMessage() : ''}
+      `;
+      bindEvents();
+    }
+
+    function renderAuth() {
+      return `<div class="auth-gate"><div class="auth-box">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;letter-spacing:1px;">ADMIN ACCESS</div>
+        <input type="password" id="auth-input" placeholder="Enter admin key" onkeydown="if(event.key==='Enter')doAuth()">
+        <br><button onclick="doAuth()">ENTER</button>
+      </div></div>`;
+    }
+
+    function doAuth() {
+      adminKey = document.getElementById('auth-input').value;
+      localStorage.setItem('p3_admin_key', adminKey);
+      loadData();
+    }
+
+    function renderTabs() {
+      return `<div class="tabs">
+        <button class="tab ${activeTab==='candidates'?'active':''}" onclick="switchTab('candidates')">CANDIDATES</button>
+        <button class="tab ${activeTab==='tokens'?'active':''}" onclick="switchTab('tokens')">LINKS</button>
+        <button class="tab ${activeTab==='message'?'active':''}" onclick="switchTab('message')">MESSAGE TEMPLATE</button>
+      </div>`;
+    }
+
+    function renderCandidates() {
+      const completed = sessions.filter(s => s.completed_at);
+      const inProgress = sessions.filter(s => !s.completed_at);
+      const avgTraps = completed.length ? (completed.reduce((s,c) => {
+        const t = traps.filter(tr => tr.session_id === c.session_id);
+        return s + t.filter(tr => tr.caught).length;
+      }, 0) / completed.length).toFixed(1) : '—';
+
+      let html = `<div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value">${completed.length}</div></div>
+        <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value">${inProgress.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Avg Traps Caught</div><div class="stat-value">${avgTraps}</div></div>
+        <div class="stat-card"><div class="stat-label">Links Sent</div><div class="stat-value">${tokens.length}</div></div>
+      </div>`;
+
+      html += '<div class="candidate-grid">';
+      html += '<div style="display:grid;grid-template-columns:200px 100px 120px 100px 1fr 120px;gap:16px;padding:0 20px 8px;font-size:10px;color:var(--faint);letter-spacing:1px;text-transform:uppercase;">'+
+        '<span>NAME</span><span>STATUS</span><span>TRAPS</span><span>DURATION</span><span>HIRE LEAN</span><span>DATE</span></div>';
+
+      for (const s of sessions) {
+        const st = traps.filter(t => t.session_id === s.session_id);
+        const caught = st.filter(t => t.caught).length;
+        const total = st.length;
+        const dur = s.total_time_ms ? Math.round(s.total_time_ms / 60000) + 'min' : '—';
+        const lean = s.hire_lean || 'pending';
+        const bc = lean.includes('hire') && !lean.includes('no') ? 'badge-hire' : lean.includes('no') ? 'badge-nohire' : lean === 'pending' ? 'badge-pending' : 'badge-uncertain';
+        const date = s.started_at ? new Date(s.started_at).toLocaleDateString() : '—';
+
+        html += `<div class="candidate-row" onclick="selectSession('${s.session_id}')">
+          <div class="candidate-name">${s.candidate_name}</div>
+          <div><span class="badge ${s.completed_at?'badge-hire':'badge-pending'}">${s.completed_at?'DONE':'ACTIVE'}</span></div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;">${caught}/${total}</div>
+          <div style="font-size:13px;color:var(--muted);">${dur}</div>
+          <div><span class="badge ${bc}">${lean.replace('-',' ').toUpperCase()}</span></div>
+          <div style="font-size:12px;color:var(--faint);">${date}</div>
+        </div>`;
+      }
+      html += '</div>';
+
+      if (selectedSession) {
+        const s = sessions.find(x => x.session_id === selectedSession);
+        if (s) html += renderDetail(s);
+      }
+
+      return html;
+    }
+
+    function renderDetail(s) {
+      const st = traps.filter(t => t.session_id === s.session_id);
+      let html = `<div class="detail-panel">
+        <div class="detail-header">
+          <h2 style="font-size:20px;font-weight:400;">${s.candidate_name}</h2>
+          <button class="detail-close" onclick="selectedSession=null;render();">&times;</button>
+        </div>`;
+
+      if (s.ai_summary) {
+        html += `<div style="margin-bottom:24px;"><div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">AI ASSESSMENT</div><div class="summary-text">${s.ai_summary}</div></div>`;
+      }
+
+      html += '<div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">BEHAVIORAL TRAPS</div>';
+      html += '<div class="trap-grid">';
+      for (const t of st) {
+        html += `<div class="trap-item ${t.caught?'trap-caught':'trap-missed'}">
+          <div style="font-weight:500;margin-bottom:4px;">${t.trap_type.replace(/_/g,' ').toUpperCase()}</div>
+          <div style="font-size:11px;">${t.caught?'CAUGHT':'MISSED'}</div>
+          ${t.ai_reasoning?`<div style="font-size:10px;color:var(--muted);margin-top:4px;">${t.ai_reasoning}</div>`:''}
+        </div>`;
+      }
+      html += '</div>';
+
+      if (detailLog) {
+        html += '<div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">FULL TRANSCRIPT</div>';
+        html += '<div class="qa-log">';
+        for (const e of detailLog) {
+          html += `<div class="qa-item">
+            <div class="qa-q">${e.question_text}</div>
+            <div class="qa-a">${e.answer}</div>
+            <div class="qa-meta">${e.is_custom?'typed':'clicked'} · ${Math.round(e.timing_ms/1000)}s</div>
+          </div>`;
+        }
+        html += '</div>';
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    function renderTokens() {
+      const baseUrl = window.location.origin;
+      let html = `<div class="token-section">
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;">CREATE NEW LINK</div>
+        <div class="create-form">
+          <input id="new-name" placeholder="Candidate full name">
+          <input id="new-email" placeholder="Email (optional)">
+          <select id="new-via" style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px;">
+            <option value="email">Email</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="dm">DM</option>
+          </select>
+          <button onclick="createToken()">GENERATE LINK</button>
+        </div>
+        <div id="new-link-result"></div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin:24px 0 12px;">ALL LINKS</div>
+        <div class="token-list">`;
+
+      for (const t of tokens) {
+        const link = `${baseUrl}?t=${t.token}&n=${encodeURIComponent(t.candidate_name.split(' ')[0])}`;
+        const status = t.status;
+        const bc = status === 'completed' ? 'badge-hire' : status === 'expired' ? 'badge-nohire' : status === 'active' ? 'badge-uncertain' : 'badge-pending';
+        html += `<div class="token-row">
+          <div>${t.candidate_name}</div>
+          <div><span class="badge ${bc}">${status.toUpperCase()}</span></div>
+          <div class="token-link" onclick="navigator.clipboard.writeText('${link}');this.style.color='var(--green)';setTimeout(()=>this.style.color='var(--accent)',1500)">${link}</div>
+          <div style="font-size:11px;color:var(--faint);">${new Date(t.created_at).toLocaleDateString()}</div>
+        </div>`;
+      }
+
+      html += '</div></div>';
+      return html;
+    }
+
+    function renderMessage() {
+      return `<div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;">OUTREACH TEMPLATE</div>
+        <div style="font-size:12px;color:var(--faint);margin-bottom:16px;">Copy and personalize. Replace [First name] and [LINK] with the candidate's unique URL.</div>
+        <div class="message-tpl">[First name] —
+
+I've been going through applications for the Integrator role at P3, and yours stood out. I wanted to reach out personally.
+
+Instead of a traditional interview, I've put together something different — a 30-minute experience I built myself. It's not a test. There are no right answers. It's just a way for me to understand how you think, how you process, and what you reach for when things get real.
+
+A few things to know:
+
+• Desktop only — won't work on your phone
+• Set aside 30 uninterrupted minutes
+• It can only be completed once
+• Everything is confidential
+
+I'll personally review every response.
+
+[LINK]
+
+— Harvey</div>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(document.querySelector('.message-tpl').textContent);this.textContent='COPIED';setTimeout(()=>this.textContent='COPY TEMPLATE',1500)">COPY TEMPLATE</button>
+      </div>`;
+    }
+
+    async function loadData() {
+      try {
+        const r = await fetch('/api/admin-data', { headers: { 'Authorization': `Bearer ${adminKey}` } });
+        if (r.status === 401) { adminKey = ''; localStorage.removeItem('p3_admin_key'); render(); return; }
+        const d = await r.json();
+        sessions = d.sessions; tokens = d.tokens; traps = d.traps;
+        render();
+      } catch (e) { console.error(e); }
+    }
+
+    async function selectSession(sid) {
+      selectedSession = sid;
+      try {
+        const r = await fetch(`/api/admin-data?session=${sid}`, { headers: { 'Authorization': `Bearer ${adminKey}` } });
+        const d = await r.json();
+        detailLog = d.logEntries;
+      } catch (e) { detailLog = null; }
+      render();
+    }
+
+    async function createToken() {
+      const name = document.getElementById('new-name').value.trim();
+      const email = document.getElementById('new-email').value.trim();
+      const via = document.getElementById('new-via').value;
+      if (!name) return;
+
+      const r = await fetch('/api/create-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminKey}` },
+        body: JSON.stringify({ candidateName: name, candidateEmail: email, sentVia: via })
+      });
+      const d = await r.json();
+
+      if (d.link) {
+        document.getElementById('new-link-result').innerHTML = `
+          <div style="background:var(--bg2);border:1px solid var(--green);padding:16px;margin-top:12px;">
+            <div style="font-size:11px;color:var(--green);margin-bottom:8px;">LINK GENERATED</div>
+            <div class="token-link" onclick="navigator.clipboard.writeText('${d.link}');this.style.color='var(--green)'">${d.link}</div>
+            <div style="font-size:11px;color:var(--faint);margin-top:8px;">Expires: ${new Date(d.expiresAt).toLocaleString()}</div>
+          </div>`;
+        document.getElementById('new-name').value = '';
+        document.getElementById('new-email').value = '';
+        loadData();
+      }
+    }
+
+    function switchTab(tab) { activeTab = tab; selectedSession = null; detailLog = null; render(); }
+    function bindEvents() {}
+
+    // Init
+    if (adminKey) loadData(); else render();
+  </script>
+</body>
+</html>
