@@ -27,78 +27,54 @@ const F = {
 // ownership mentality, and ability to manage up to a non-technical CEO
 // ═══════════════════════════════════════════════════════════
 const Q = {
-  // PHASE 1: THE CORE QUESTION
-  q1:{text:"I want to ask you something straight. There are two kinds of technical people. The first kind asks how you want it done, follows the spec, delivers what's asked. The second kind takes what you have and blows it out — sees what you can't see, builds what you didn't know you needed. Which one are you?",options:["I follow the spec","I blow it out","Depends on the situation"],next:(r,m)=>m.custom?"q1_custom":r.includes("follow")?"q1_follow_spec":r.includes("blow")?"q1_blow":"q1_depends"},
-  q1_follow_spec:{text:"So if I hand you a messy codebase and say 'just keep it running' — you'd do exactly that? Nothing more?",forceCustom:true,next:()=>"q1_dig"},
-  q1_blow:{text:"Give me an example. A real one. Not a story about 'adding a feature.' A time you fundamentally changed what was possible because you saw something no one else did.",forceCustom:true,next:()=>"q1_dig"},
-  q1_depends:{text:"That's the safe answer. But I need to know your default. When no one's watching and there's no spec — what do you actually do?",forceCustom:true,next:()=>"q1_dig"},
-  q1_custom:{text:"I hear you. But boil it down — when you inherit something broken, does your instinct say 'fix it' or 'reimagine it'?",options:["Fix it","Reimagine it"],next:(r)=>r.includes("Fix")?"q1_follow_spec":"q1_blow"},
-  q1_dig:{text:"What's a piece of technology you strongly believe in that most of your peers think is overhyped or wrong?",forceCustom:true,next:()=>"q2"},
+  // PHASE 1: WHAT DRIVES YOU
+  q1:{text:"Before we get into anything technical — why did you get into this? Not 'I liked computers as a kid.' What actually pulls you into a screen at 2 AM when no one's asking you to be there?",forceCustom:true,isTrap:"motivation",next:()=>"q1b"},
+  q1b:{text:"You built SubmitIt — AI plagiarism detection, 100K submissions. You co-founded TheBoard. You're currently at IET Labs doing something completely different. What's the pattern? Are you chasing or building?",forceCustom:true,isTrap:"self_awareness",next:()=>"q1c"},
+  q1c:{text:"I told you in our conversation — I need someone who takes what I have and blows it out. Not someone who asks me how I want it done. You said you're that person. Prove it to me right now. Look at what you know about P3 and tell me one thing I should be building that I haven't thought of yet.",forceCustom:true,isTrap:"blow_it_out",next:()=>"q2"},
 
-  // PHASE 2: ARCHITECTURE UNDER PRESSURE
-  q2:{text:"Here's the situation. We have a React frontend on Vercel, Supabase for the database, serverless API routes, and everything is held together with duct tape. The app works but it breaks every time we push. No tests, no CI, no documentation. You inherit this on day one. What do you do in your first 72 hours?",forceCustom:true,isTrap:"first_72",next:()=>"q2b"},
-  q2b:{text:"Interesting. Now I'll tell you — the founder built all of this himself. He's emotionally attached to every architecture decision. How do you handle telling him half of it needs to be rebuilt?",forceCustom:true,isTrap:"manage_up",next:()=>"q2c"},
-  q2c:{text:"He pushes back. Says 'it works, don't touch it.' But you know the Supabase schema has no indexes, the API routes have no error handling, and there's a raw SQL injection vulnerability in the booking flow. What do you actually do?",forceCustom:true,isTrap:"security_urgency",next:()=>"q3"},
+  // PHASE 2: CAN YOU ACTUALLY DO EVERYTHING
+  q2:{text:"Real talk. This isn't a big team role. Most days it's going to be you, the code, and a problem. No architect to consult, no DevOps team, no QA department. Frontend breaks — you fix it. Database is slow — you optimize it. Deployment fails — you debug it. API needs building — you build it. Are you genuinely comfortable being the single point of everything?",options:["Yes, that's how I work best","I prefer having some support"],next:(r,m)=>m.custom?"q2_custom":r.includes("Yes")?"q2_yes":"q2_support"},
+  q2_yes:{text:"Walk me through last week at IET Labs. What did you actually touch — frontend, backend, database, DevOps, or all of it?",forceCustom:true,next:()=>"q2b"},
+  q2_support:{text:"Honest answer. But there is no support here. Not right away. If that's a dealbreaker, tell me now.",forceCustom:true,next:()=>"q2b"},
+  q2_custom:{text:"I need a straight answer on this one. Can you handle being the only technical person in the room — yes or no?",options:["Yes","No"],next:(r)=>r==="Yes"?"q2_yes":"q2_support"},
+  q2b:{text:"We currently use a platform called Power IT for some of our property management operations. Between you and me — I think it's limited. Not intelligent. No real automation, no custom logic, just filling in forms. If you looked at what Power IT does for us and had six months, could you replace it? Or is that a pipe dream?",forceCustom:true,isTrap:"power_it",next:()=>"q2c"},
+  q2c:{text:"What would you need from me to make that happen? Not resources — I mean information, access, decisions. What do you need from the non-technical CEO to let you do your job?",forceCustom:true,isTrap:"manage_up",next:()=>"q3"},
 
-  // PHASE 3: DEBUGGING LIVE
-  q3:{text:"Production is down. Users are seeing a white screen. You have access to Vercel logs, Supabase dashboard, and the GitHub repo. Walk me through exactly what you do in the first 5 minutes.",forceCustom:true,isTrap:"debug_method",next:()=>"q3b"},
-  q3b:{text:"The logs show a 500 error on /api/submit-booking. The function was working yesterday. The last deploy was 3 hours ago by a junior developer who's now offline and in a different timezone. What's your next move?",forceCustom:true,next:()=>"q3c"},
-  q3c:{text:"You find the bug — the junior dev changed an environment variable name but didn't update the serverless function. It's a one-line fix. Do you fix it yourself and deploy, or wait for the junior to come online so they can learn from it?",options:["Fix it now, teach later","Wait for them to fix it"],next:(r,m)=>m.custom?"q4":r.includes("Fix")?"q3_fix":"q3_wait"},
-  q3_fix:{text:"Right. Production comes first. Now — how do you prevent this from happening again? Not in theory. What specifically do you implement this week?",forceCustom:true,isTrap:"systems_thinking",next:()=>"q4"},
-  q3_wait:{text:"Users are seeing a white screen right now. Every minute costs real revenue. You'd wait?",forceCustom:true,next:()=>"q3_fix2"},
-  q3_fix2:{text:"Ok. You fix it. How do you prevent this from happening again? Not in theory — what do you implement this week?",forceCustom:true,isTrap:"systems_thinking",next:()=>"q4"},
+  // PHASE 3: THE BEAST — REAL SCENARIO
+  q3:{text:"Let me describe what you'd actually inherit. We call it The Beast. Property management platform — React frontend on Vercel, Supabase database with over 100 tables, serverless API routes. Handles tenants, leases, units, work orders, financials, compliance. Built fast by one person who's no longer here. Barely documented. It works, but it's fragile. What's the first thing you do?",forceCustom:true,isTrap:"first_72",next:()=>"q3b"},
+  q3b:{text:"The monthly financial close takes the accounting team 3 days of manual spreadsheet work because the reconciliation module was never finished. Would you finish building the module inside The Beast, or would you build something that automates what they're already doing in spreadsheets?",options:["Build the module","Automate the spreadsheets"],next:(r,m)=>m.custom?"q3c":r.includes("module")?"q3_module":"q3_sheet"},
+  q3_module:{text:"That's architecturally cleaner. But the team's been doing it in spreadsheets for 14 months. They're comfortable. How do you get them to trust your new module?",forceCustom:true,next:()=>"q3c"},
+  q3_sheet:{text:"Pragmatic. But now you've got two sources of truth. When does that become a problem and what's your plan?",forceCustom:true,next:()=>"q3c"},
+  q3c:{text:"Production goes down. Users see a white screen. You've got Vercel logs, Supabase dashboard, and a GitHub repo with no documentation. Walk me through your first 5 minutes.",forceCustom:true,isTrap:"debug_method",next:()=>"q4"},
 
-  // PHASE 4: REMOTE TEAM MANAGEMENT
-  q4:{text:"You're managing 4 developers across 3 time zones. One is in Eastern Europe, two in South America, one in the Philippines. None of them have ever met in person. How do you run this team?",forceCustom:true,isTrap:"remote_ops",next:()=>"q4b"},
-  q4b:{text:"The developer in Eastern Europe is your strongest engineer. Brilliant code, never misses a deadline. But the South American devs say he's dismissive in code reviews and they're afraid to push back on his PRs. What do you do?",forceCustom:true,isTrap:"people_conflict",next:()=>"q4c"},
-  q4c:{text:"He tells you: 'Their code quality isn't good enough. I'm not going to approve garbage just to be nice.' He's technically right — their code does need improvement. But they're demoralized and one is thinking about quitting. How do you handle this?",forceCustom:true,next:()=>"q5"},
+  // PHASE 4: TECHNICAL DEPTH — NO FAKING
+  q4:{text:"Quick fire. No thinking time. What's the difference between an index and a foreign key?",forceCustom:true,isTrap:"fundamentals",next:()=>"q4b"},
+  q4b:{text:"A query that was taking 200ms is now taking 8 seconds. The table went from 10K rows to 500K. Nothing else changed. What happened?",forceCustom:true,next:()=>"q4c"},
+  q4c:{text:"We need row-level security on a production table — 800 tenants, each should only see their own data. Live traffic, can't go down. How do you do it?",forceCustom:true,isTrap:"rls_knowledge",next:()=>"q4d"},
+  q4d:{text:"You've worked with Prisma, SQL Server, AWS, Docker. Our stack is Supabase, Vercel serverless, no containers. Different world. How fast can you actually be productive in a stack you haven't shipped to production before?",forceCustom:true,isTrap:"stack_honesty",next:()=>"q5"},
 
-  // PHASE 5: TECHNICAL HONESTY TRAPS
-  q5:{text:"We're evaluating our stack. Someone on the team is pushing hard to rewrite the entire backend in Go because 'Node.js doesn't scale.' The app currently handles 200 requests per minute. What's your take?",forceCustom:true,isTrap:"overengineer",next:()=>"q5b"},
-  q5b:{text:"What's a technology decision you made that turned out to be completely wrong? Not a small thing — something that cost real time or money.",forceCustom:true,next:()=>"q5c"},
-  q5c:{text:"I'll be honest — I don't really understand the difference between a serverless function and a regular API server. Explain it to me like I'm the CEO who signs the checks but doesn't write code.",forceCustom:true,isTrap:"explain_up",next:()=>"q6"},
+  // PHASE 5: SHORTCUTS, TRADEOFFS, JUDGMENT
+  q5:{text:"Someone on the team wants to rewrite the backend in Go because 'Node doesn't scale.' We handle 200 requests per minute. What's your take?",forceCustom:true,isTrap:"overengineer",next:()=>"q5b"},
+  q5b:{text:"You ship a feature and it's buggy — answers are sometimes not saving. You can spend 3 days finding the root cause, or add a retry mechanism that masks it and fix it properly next sprint. Which one?",options:["Root cause now","Retry and fix later"],next:(r,m)=>m.custom?"q5c":r.includes("Root")?"q5_root":"q5_mask"},
+  q5_root:{text:"I'm breathing down your neck for the next feature. How do you explain to me — someone who doesn't write code — why you need 3 days of 'nothing visible'?",forceCustom:true,isTrap:"explain_up",next:()=>"q5d"},
+  q5_mask:{text:"Two months later you discover 12% of submissions were silently lost. Whose fault is that?",forceCustom:true,isTrap:"ownership",next:()=>"q5d"},
+  q5c:{text:"Give me your take — what would you actually do?",forceCustom:true,next:()=>"q5d"},
+  q5d:{text:"What's the worst technical decision you've ever made? Not a small mistake — something that cost real time or real money.",forceCustom:true,next:()=>"q6"},
 
-  // PHASE 6: SHIPPING & VELOCITY
-  q6:{text:"We need to launch a new feature — a candidate assessment tool that collects answers, runs AI analysis, and sends email notifications. How long does this take?",options:["A weekend","1-2 weeks","A month","2-3 months"],next:(r,m)=>m.custom?"q6_custom":r.includes("weekend")?"q6_fast":r.includes("month")&&!r.includes("2")?"q6_slow":r.includes("2-3")?"q6_vslow":"q6_mid"},
-  q6_fast:{text:"A weekend. What are you cutting to hit that timeline?",forceCustom:true,next:()=>"q6_follow"},
-  q6_mid:{text:"Walk me through the week-by-week breakdown. What ships when?",forceCustom:true,next:()=>"q6_follow"},
-  q6_slow:{text:"A month for a form that saves to a database and sends an email? What takes a month?",forceCustom:true,next:()=>"q6_follow"},
-  q6_vslow:{text:"Two to three months. We'd lose the hiring window. What if I told you it needs to be live in 10 days?",forceCustom:true,next:()=>"q6_follow"},
-  q6_custom:{text:"Give me a number. Days, not vibes.",forceCustom:true,next:()=>"q6_follow"},
-  q6_follow:{text:"The feature ships but it's buggy. Users report that answers are sometimes not saving. You can either: spend 3 days debugging and fixing, or add a retry mechanism that masks the bug and ship a proper fix next sprint. Which do you choose?",options:["Fix the root cause now","Ship the retry, fix later"],next:(r,m)=>m.custom?"q7":r.includes("root")?"q6_root":"q6_mask"},
-  q6_root:{text:"Good instinct. But the CEO is breathing down your neck for the next feature. How do you justify 3 days of 'nothing visible' to someone who doesn't understand tech debt?",forceCustom:true,isTrap:"justify_debt",next:()=>"q7"},
-  q6_mask:{text:"Honest answer. But that retry is now hiding a data integrity issue. Two months later, you discover 12% of submissions were silently lost. Who's responsible?",forceCustom:true,isTrap:"ownership",next:()=>"q7"},
+  // PHASE 6: THE REAL STUFF — ARIEL SPECIFIC
+  q6:{text:"Your resume lists leading 20+ developers cross-functionally at TheBoard — frontend, backend, ML, admin. Walk me through that honestly. Who were these people? Full-time? Part-time? Students? How many hours were they actually putting in?",forceCustom:true,isTrap:"team_claim",next:()=>"q6b"},
+  q6b:{text:"You're at IET Labs right now building software for impedance meters and resistance substituters. That's hardware-adjacent, very different from SaaS property management. What makes you think those skills transfer to what we're doing?",forceCustom:true,next:()=>"q6c"},
+  q6c:{text:"You'd be relocating from Boston. That's real. What happens if three months in, you're deep in a messy codebase, the team is remote, you're the only one in the office, and it's not what you expected? What keeps you here?",forceCustom:true,isTrap:"commitment",next:()=>"q7"},
 
-  // PHASE 7: REAL SCENARIO — THE BEAST
-  q7:{text:"I'm going to describe our actual system. We call it The Beast. It's a property management platform — handles units, tenants, leases, work orders, financials, compliance. Over 100 database tables. Built fast, barely documented. The guy who built it is gone. You're inheriting it. What's your first question?",forceCustom:true,isTrap:"first_question",next:()=>"q7b"},
-  q7b:{text:"There's a monthly close process that takes 3 days of manual work because the financial reconciliation module was never finished. The accounting team does it in spreadsheets. Do you finish building the module or build an integration that automates their spreadsheet workflow?",options:["Finish the module","Automate the spreadsheet"],next:(r,m)=>m.custom?"q7c":r.includes("module")?"q7_module":"q7_sheet"},
-  q7_module:{text:"That's the 'right' answer architecturally. But the accounting team has been doing it in spreadsheets for 14 months and they're comfortable with it. How long before this module is actually saving them time?",forceCustom:true,next:()=>"q7c"},
-  q7_sheet:{text:"Pragmatic. But now you've got two systems of record — the database and the spreadsheet. Six months from now that's going to bite you. What's your plan?",forceCustom:true,next:()=>"q7c"},
-  q7c:{text:"A tenant reports a bug — their lease shows the wrong rent amount. You check the database and the number is correct. You check the frontend and it's displaying wrong. The component was last touched 4 months ago and there's no git blame because someone force-pushed. How do you find the bug?",forceCustom:true,isTrap:"debug_no_trail",next:()=>"q7d"},
+  // PHASE 7: VISION & OWNERSHIP
+  q7:{text:"Budget reality. I've got maybe $8K a month for the whole dev operation — you included. That's it. No negotiation. How do you structure this?",forceCustom:true,isTrap:"resource_reality",next:()=>"q7b"},
+  q7b:{text:"I ask you: 'Can we ditch Supabase? I heard Firebase is free.' What do you tell me?",forceCustom:true,isTrap:"migration_trap",next:()=>"q7c"},
+  q7c:{text:"It's 11 PM on a Friday. A client's financial data isn't syncing and they have a board meeting Monday morning. Your team is offline. What do you do?",forceCustom:true,isTrap:"friday_night",next:()=>"q8"},
 
-  // PHASE 7B: ARIEL-SPECIFIC DEPTH PROBES (without naming him)
-  q7d:{text:"Quick shift. You mentioned experience leading cross-functional teams — engineering, frontend, backend, ML, admin. Walk me through how you actually structured that. Who reported to who? How did you divide the work?",forceCustom:true,isTrap:"team_claim",next:()=>"q7e"},
-  q7e:{text:"That team — were they full-time employees, contractors, students, or a mix? How many hours a week were they actually contributing?",forceCustom:true,next:()=>"q7f"},
-  q7f:{text:"You've worked with Prisma and SQL Server. Our system runs on Supabase — which is PostgreSQL under the hood. You've also listed AWS, Docker, S3. But this role is Vercel serverless, not containers. How quickly can you context-switch into a stack you haven't deployed to production before?",forceCustom:true,isTrap:"stack_honesty",next:()=>"q7g"},
-  q7g:{text:"Be honest with me. Your current role — building test equipment software for impedance meters — is very different from what we're doing. Property management, tenant portals, financial reconciliation. What makes you think the skills transfer?",forceCustom:true,isTrap:"self_awareness",next:()=>"q7h"},
-  q7h:{text:"You'd need to relocate for this. That's a real commitment. What happens if three months in, this isn't what you expected? You've moved across the country, you're deep in a messy codebase, the team is remote and you're the only one in-office. What keeps you from walking?",forceCustom:true,isTrap:"commitment",next:()=>"q8"},
-
-  // PHASE 8: DECISION-MAKING UNDER CONSTRAINTS
-  q8:{text:"Budget reality. You have $8,000 a month for your entire dev team. That's it. No negotiation. What does your team look like?",forceCustom:true,isTrap:"resource_reality",next:()=>"q8b"},
-  q8b:{text:"You find an incredible full-stack developer who wants $6,000 a month. That leaves $2,000 for everything else — QA, DevOps, design. Do you hire them?",options:["Yes, they're worth it","No, need to spread the budget"],next:(r,m)=>m.custom?"q8c":r.includes("Yes")?"q8_yes":"q8_no"},
-  q8_yes:{text:"Now you're a two-person team and the $6K dev gets sick for two weeks. What happens?",forceCustom:true,next:()=>"q8c"},
-  q8_no:{text:"What's the team structure at $8K total? Be specific — roles, rates, hours.",forceCustom:true,next:()=>"q8c"},
-  q8c:{text:"The CEO asks you: 'Can we move off Supabase to save money? I heard Firebase is free.' What do you tell him?",forceCustom:true,isTrap:"migration_trap",next:()=>"q9"},
-
-  // PHASE 9: TECHNICAL DEPTH CHECK
-  q9:{text:"Quick round. No thinking time. What's the difference between an index and a foreign key?",forceCustom:true,isTrap:"fundamentals",next:()=>"q9b"},
-  q9b:{text:"A query that used to take 200ms is now taking 8 seconds. The table grew from 10,000 rows to 500,000. Nothing else changed. What happened and how do you fix it?",forceCustom:true,next:()=>"q9c"},
-  q9c:{text:"You need to add row-level security to a table that currently has none. 800 active tenants, each should only see their own data. It's a production database with live traffic. Walk me through how you do this without breaking anything.",forceCustom:true,isTrap:"rls_knowledge",next:()=>"q10"},
-
-  // PHASE 10: OWNERSHIP & GRIT
-  q10:{text:"It's 11 PM on a Friday. A client's data isn't syncing and they have a board meeting Monday morning using that data. Your team is offline. What do you do?",forceCustom:true,isTrap:"friday_night",next:()=>"q10b"},
-  q10b:{text:"What's something you built that you're genuinely proud of — not because it was technically impressive, but because it actually mattered to someone?",forceCustom:true,next:()=>"q10c"},
-  q10c:{text:"Last question. Why this role? You could work anywhere. Why would you sign up to inherit someone else's messy codebase, manage a team you've never met, and answer to a CEO who doesn't understand what you do?",forceCustom:true,isTrap:"why_here",next:()=>"DONE"},
+  // PHASE 8: THE CLOSE — WHO ARE YOU
+  q8:{text:"What have you built that you're genuinely proud of — not because it was technically impressive, but because it actually mattered to someone?",forceCustom:true,next:()=>"q8b"},
+  q8b:{text:"If I hire you and give you full ownership of The Beast — the codebase, the infrastructure, the roadmap, everything — what does it look like in 6 months? Not what's fixed. What's different. What exists that doesn't exist today?",forceCustom:true,isTrap:"vision",next:()=>"q8c"},
+  q8c:{text:"Last one. You could take a safe job at a big company. Good salary, clear expectations, defined scope. Why would you choose this instead — messy codebase, tight budget, non-technical CEO, everything on your shoulders?",forceCustom:true,isTrap:"why_here",next:()=>"DONE"},
 
   DONE:{text:"",terminal:true,next:()=>"END"},
 };
@@ -113,9 +89,29 @@ function isRelevant(qid,t){if(Q[qid]?.isTrap)return true;const w=REL[qid];if(!w)
 function analyzeLocal(type,text){
   const l=text.toLowerCase();
 
+  if(type==="motivation"){
+    const good=["solve","build","create","curiosity","problem","obsess","can't stop","love","passion","drive","compel","itch","need to","matter","impact"].some(w=>l.includes(w));
+    const bad=["salary","money","career","resume","job","position","stable"].some(w=>l.includes(w));
+    return{trap:type,caught:good&&!bad,cat:"MOTIVATION"};
+  }
+  if(type==="blow_it_out"){
+    const good=["what if","could","should","build","idea","imagine","haven't","missing","opportunity","nobody","integrate","automate","ai","data","tenant","predict"].some(w=>l.includes(w));
+    const bad=["i don't know","not sure","hard to say","need to learn more","would need to see"].some(w=>l.includes(w));
+    return{trap:type,caught:good&&l.split(/\s+/).length>15,cat:"VISION"};
+  }
+  if(type==="power_it"){
+    const good=["replace","build","custom","better","automate","workflow","api","integrate","migrate","phase","gradually","audit first","understand"].some(w=>l.includes(w));
+    const bad=["impossible","too complex","wouldn't touch","keep it","risky"].some(w=>l.includes(w));
+    return{trap:type,caught:good&&!bad,cat:"AMBITION"};
+  }
+  if(type==="vision"){
+    const good=["automate","dashboard","real-time","predict","ai","integrate","self-service","tenant","portal","mobile","api","pipeline","monitor","alert","scale"].some(w=>l.includes(w));
+    const bad=["fix bugs","clean up","document","stable","same"].some(w=>l.includes(w)&&l.split(/\s+/).length<20);
+    return{trap:type,caught:good&&l.split(/\s+/).length>20,cat:"VISION"};
+  }
   if(type==="first_72"){
-    const good=["audit","test","document","ci","deploy","git","log","error","security","monitor","observ","metric","sentry","index","schema"].some(w=>l.includes(w));
-    const bad=["rewrite","rebuild","start over","scratch","new framework","migrate"].some(w=>l.includes(w));
+    const good=["audit","test","document","ci","deploy","git","log","error","security","monitor","observ","metric","sentry","index","schema","understand","map","read"].some(w=>l.includes(w));
+    const bad=["rewrite","rebuild","start over","scratch","new framework"].some(w=>l.includes(w));
     return{trap:type,caught:good&&!bad,cat:"ARCHITECTURE"};
   }
   if(type==="manage_up"){
@@ -228,9 +224,12 @@ function analyzeLocal(type,text){
 }
 
 const TRAP_PROMPTS={
+  motivation:`What drives them to code at 2AM? Did they show INTRINSIC DRIVE (solve, build, obsess, can't stop) or EXTRINSIC (salary, career, resume)?`,
+  blow_it_out:`Asked to pitch something P3 should build. Did they show VISION (specific idea, detailed, ambitious) or DEFLECTION (need to learn more, hard to say)?`,
+  power_it:`Can they replace Power IT? Did they show AMBITION (yes, build custom, automate) or FEAR (impossible, too complex, keep it)?`,
+  vision:`6 months with full ownership — what's different? Did they paint a VISION (automate, predict, scale, new capabilities) or just FIX BUGS (clean up, document, stabilize)?`,
   first_72:`Day 1 inheriting messy codebase. Did they prioritize STABILITY (audit, test, monitor, document) or REWRITE (start over, new framework)?`,
-  manage_up:`Telling a founder his code needs rebuilding. Did they show DIPLOMACY (data, gradual, earn trust) or BLUNTNESS (tell him, just do it)?`,
-  security_urgency:`SQL injection in production. Did they treat it as URGENT (fix now, patch today) or PROCESS (next sprint, backlog)?`,
+  manage_up:`What do they need from a non-technical CEO? Did they show PARTNERSHIP (access, decisions, trust, context) or DEMANDS (budget, team, tools)?`,
   debug_method:`Production down. Did they follow a SYSTEMATIC method (logs, recent deploy, status checks) or RANDOM guessing?`,
   systems_thinking:`Preventing env var bugs. Did they propose AUTOMATION (CI, tests, pipeline) or HUMAN PROCESS (be careful, meetings)?`,
   remote_ops:`Managing 4 devs across 3 timezones. Did they emphasize ASYNC (written comms, documented decisions) or SURVEILLANCE (monitoring, tracking hours)?`,
@@ -308,10 +307,10 @@ function Opening({onComplete,candidateName,videoUrl}){
   const steps=[
     {type:"greeting"},
     ...(hasVideo?[{type:"video"}]:[]),
-    {type:"msg",text:"This isn't a technical interview. There are no whiteboard problems. No trick questions about Big O notation."},
-    {type:"msg",text:"What you're about to go through is a conversation — designed to see how you actually think about technology, teams, and problems. Not how you perform in an interview."},
-    {type:"msg",text:"Some of these scenarios are deliberately messy. Real situations, real constraints. I need to see how you operate when the ground is uneven."},
-    {type:"msg",text:"Be direct. Be honest. I'd rather hear 'I don't know' than a polished non-answer."},
+    {type:"msg",text:"I enjoyed our conversation. This is the next step — but it's not a test. There are no trick questions. No whiteboard problems."},
+    {type:"msg",text:"What you're about to go through is a deeper conversation. Real scenarios from our actual business. Real constraints. I want to see how you think when the problems are messy and there's no perfect answer."},
+    {type:"msg",text:"Some of this will be technical. Some of it will be personal. All of it matters to me."},
+    {type:"msg",text:"Be direct. Be honest. I'd rather hear 'I don't know' than a polished non-answer. Take your time."},
     {type:"begin"}
   ];
   const cur=steps[step];const tw=useTypewriter(cur?.type==="msg"?cur.text:cur?.type==="greeting"?`${candidateName} — let's talk.`:"",cur?.type==="greeting"?50:28);
