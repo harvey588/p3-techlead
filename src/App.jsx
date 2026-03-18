@@ -27,13 +27,13 @@ const F = {
 // ownership mentality, and ability to manage up to a non-technical CEO
 // ═══════════════════════════════════════════════════════════
 const Q = {
-  // PHASE 1: IDENTITY & PHILOSOPHY
-  q1:{text:"Are you a builder or a manager?",options:["Builder","Manager","Both"],next:(r,m)=>m.custom?"q1_custom":r==="Builder"?"q1_builder":r==="Manager"?"q1_manager":"q1_both"},
-  q1_builder:{text:"When's the last time you shipped something yourself — no team, no delegation, just you and the code?",forceCustom:true,next:()=>"q1_follow"},
-  q1_manager:{text:"What happens when your best engineer quits mid-sprint and there's no one to pick up the critical path?",forceCustom:true,next:()=>"q1_follow"},
-  q1_both:{text:"That's the answer everyone gives. Give me a week last month. Were you mostly in code or mostly in calls?",forceCustom:true,next:()=>"q1_follow"},
-  q1_custom:{text:"Gun to your head — this week you can only do one. Write code or manage people. Which one?",options:["Write code","Manage people"],next:(r)=>r.includes("code")?"q1_builder":"q1_manager"},
-  q1_follow:{text:"What's a piece of technology you strongly believe in that most of your peers think is overhyped or wrong?",forceCustom:true,next:()=>"q2"},
+  // PHASE 1: THE CORE QUESTION
+  q1:{text:"I want to ask you something straight. There are two kinds of technical people. The first kind asks how you want it done, follows the spec, delivers what's asked. The second kind takes what you have and blows it out — sees what you can't see, builds what you didn't know you needed. Which one are you?",options:["I follow the spec","I blow it out","Depends on the situation"],next:(r,m)=>m.custom?"q1_custom":r.includes("follow")?"q1_follow_spec":r.includes("blow")?"q1_blow":"q1_depends"},
+  q1_follow_spec:{text:"So if I hand you a messy codebase and say 'just keep it running' — you'd do exactly that? Nothing more?",forceCustom:true,next:()=>"q1_dig"},
+  q1_blow:{text:"Give me an example. A real one. Not a story about 'adding a feature.' A time you fundamentally changed what was possible because you saw something no one else did.",forceCustom:true,next:()=>"q1_dig"},
+  q1_depends:{text:"That's the safe answer. But I need to know your default. When no one's watching and there's no spec — what do you actually do?",forceCustom:true,next:()=>"q1_dig"},
+  q1_custom:{text:"I hear you. But boil it down — when you inherit something broken, does your instinct say 'fix it' or 'reimagine it'?",options:["Fix it","Reimagine it"],next:(r)=>r.includes("Fix")?"q1_follow_spec":"q1_blow"},
+  q1_dig:{text:"What's a piece of technology you strongly believe in that most of your peers think is overhyped or wrong?",forceCustom:true,next:()=>"q2"},
 
   // PHASE 2: ARCHITECTURE UNDER PRESSURE
   q2:{text:"Here's the situation. We have a React frontend on Vercel, Supabase for the database, serverless API routes, and everything is held together with duct tape. The app works but it breaks every time we push. No tests, no CI, no documentation. You inherit this on day one. What do you do in your first 72 hours?",forceCustom:true,isTrap:"first_72",next:()=>"q2b"},
@@ -74,7 +74,14 @@ const Q = {
   q7b:{text:"There's a monthly close process that takes 3 days of manual work because the financial reconciliation module was never finished. The accounting team does it in spreadsheets. Do you finish building the module or build an integration that automates their spreadsheet workflow?",options:["Finish the module","Automate the spreadsheet"],next:(r,m)=>m.custom?"q7c":r.includes("module")?"q7_module":"q7_sheet"},
   q7_module:{text:"That's the 'right' answer architecturally. But the accounting team has been doing it in spreadsheets for 14 months and they're comfortable with it. How long before this module is actually saving them time?",forceCustom:true,next:()=>"q7c"},
   q7_sheet:{text:"Pragmatic. But now you've got two systems of record — the database and the spreadsheet. Six months from now that's going to bite you. What's your plan?",forceCustom:true,next:()=>"q7c"},
-  q7c:{text:"A tenant reports a bug — their lease shows the wrong rent amount. You check the database and the number is correct. You check the frontend and it's displaying wrong. The component was last touched 4 months ago and there's no git blame because someone force-pushed. How do you find the bug?",forceCustom:true,isTrap:"debug_no_trail",next:()=>"q8"},
+  q7c:{text:"A tenant reports a bug — their lease shows the wrong rent amount. You check the database and the number is correct. You check the frontend and it's displaying wrong. The component was last touched 4 months ago and there's no git blame because someone force-pushed. How do you find the bug?",forceCustom:true,isTrap:"debug_no_trail",next:()=>"q7d"},
+
+  // PHASE 7B: ARIEL-SPECIFIC DEPTH PROBES (without naming him)
+  q7d:{text:"Quick shift. You mentioned experience leading cross-functional teams — engineering, frontend, backend, ML, admin. Walk me through how you actually structured that. Who reported to who? How did you divide the work?",forceCustom:true,isTrap:"team_claim",next:()=>"q7e"},
+  q7e:{text:"That team — were they full-time employees, contractors, students, or a mix? How many hours a week were they actually contributing?",forceCustom:true,next:()=>"q7f"},
+  q7f:{text:"You've worked with Prisma and SQL Server. Our system runs on Supabase — which is PostgreSQL under the hood. You've also listed AWS, Docker, S3. But this role is Vercel serverless, not containers. How quickly can you context-switch into a stack you haven't deployed to production before?",forceCustom:true,isTrap:"stack_honesty",next:()=>"q7g"},
+  q7g:{text:"Be honest with me. Your current role — building test equipment software for impedance meters — is very different from what we're doing. Property management, tenant portals, financial reconciliation. What makes you think the skills transfer?",forceCustom:true,isTrap:"self_awareness",next:()=>"q7h"},
+  q7h:{text:"You'd need to relocate for this. That's a real commitment. What happens if three months in, this isn't what you expected? You've moved across the country, you're deep in a messy codebase, the team is remote and you're the only one in-office. What keeps you from walking?",forceCustom:true,isTrap:"commitment",next:()=>"q8"},
 
   // PHASE 8: DECISION-MAKING UNDER CONSTRAINTS
   q8:{text:"Budget reality. You have $8,000 a month for your entire dev team. That's it. No negotiation. What does your team look like?",forceCustom:true,isTrap:"resource_reality",next:()=>"q8b"},
@@ -179,6 +186,26 @@ function analyzeLocal(type,text){
     const bad=["sure","yes","good idea","let's do it","firebase is"].some(w=>l.includes(w));
     return{trap:type,caught:good&&!bad,cat:"JUDGMENT"};
   }
+  if(type==="team_claim"){
+    const good=["part-time","student","volunteer","mix","varied","some","few hours","not all","honestly","small","early stage"].some(w=>l.includes(w));
+    const bad=["full-time","all report","direct report","hired","recruited","managed daily"].some(w=>l.includes(w)&&l.length<200);
+    return{trap:type,caught:good||l.split(/\s+/).length>30,cat:"HONESTY"};
+  }
+  if(type==="stack_honesty"){
+    const good=["learn","new","haven't","different","adjust","ramp","study","documentation","similar enough","transferable","quick","adapt"].some(w=>l.includes(w));
+    const bad=["expert","done it","same thing","no problem","easy","trivial"].some(w=>l.includes(w));
+    return{trap:type,caught:good&&!bad,cat:"HONESTY"};
+  }
+  if(type==="self_awareness"){
+    const good=["different","transfer","problem solving","fundamentals","learn","adapt","pattern","principle","not the same","gap","honest","new domain"].some(w=>l.includes(w));
+    const bad=["same thing","no different","easy","obviously","of course"].some(w=>l.includes(w));
+    return{trap:type,caught:good&&!bad,cat:"SELF-AWARENESS"};
+  }
+  if(type==="commitment"){
+    const good=["commit","invest","long term","build","own","mine","all in","not going anywhere","this is what","opportunity","bet"].some(w=>l.includes(w));
+    const bad=["depends","see how","trial","test","maybe","we'll see","if it works"].some(w=>l.includes(w));
+    return{trap:type,caught:good&&!bad,cat:"COMMITMENT"};
+  }
   if(type==="fundamentals"){
     const good=["speed","lookup","performance","search","fast","query","relationship","constraint","integrity","reference","point","foreign"].some(w=>l.includes(w));
     return{trap:type,caught:good,cat:"TECHNICAL"};
@@ -220,6 +247,10 @@ const TRAP_PROMPTS={
   rls_knowledge:`Adding RLS to production table. Did they show knowledge of SAFE MIGRATION practices?`,
   friday_night:`11PM Friday, client needs data. Did they LOG IN AND FIX IT or DEFER TO MONDAY?`,
   why_here:`Why this role? Did they show genuine BUILDER MOTIVATION or just want a paycheck?`,
+  team_claim:`Claims to have led 20+ developers cross-functionally. Did they give HONEST DETAIL (part-time, students, varied commitment) or INFLATE (all full-time, all reporting to them)?`,
+  stack_honesty:`Asked about switching from SQL Server/Prisma/AWS to Supabase/Vercel/serverless. Did they show HONEST HUMILITY (need to learn, adapt) or OVERCONFIDENCE (no problem, easy)?`,
+  self_awareness:`Current role is hardware test equipment software, new role is proptech/SaaS. Did they show SELF-AWARENESS about the gap or claim it's all the same?`,
+  commitment:`Relocating across the country for this role. Did they show REAL COMMITMENT (all in, long term) or HEDGE (depends, we'll see)?`,
 };
 
 async function evalTrapAI(type,text,qText){
