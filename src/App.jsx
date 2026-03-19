@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { supabase, validateToken, saveLogEntry, saveTrapResult, createSession, completeSession } from "./supabase.js";
+import { supabase, validateToken, markTokenActive, saveLogEntry, saveTrapResult, createSession, completeSession, savePartialSession } from "./supabase.js";
 
 // ═══════════════════════════════════════════════════════════
 // THE TECHNICAL CONVERSATION — FULL-STACK LEAD ASSESSMENT
@@ -353,10 +353,10 @@ export default function App(){
   const idleTimer=useRef(null);const lockTimer=useRef(null);const sessionKey=useRef("p3tl_"+sid.current);
 
   useEffect(()=>{const existing=sessionStorage.getItem(sessionKey.current);if(existing==="started"){sessionStorage.setItem(sessionKey.current,"abandoned");setLocked(true);};},[]);
-  useEffect(()=>{if(phase==="active"&&!locked)sessionStorage.setItem(sessionKey.current,"started");},[phase,locked]);
-  useEffect(()=>{if(phase!=="active")return;const h=()=>{sessionStorage.setItem(sessionKey.current,"abandoned");};window.addEventListener("beforeunload",h);return()=>window.removeEventListener("beforeunload",h);},[phase]);
+  useEffect(()=>{if(phase==="active"&&!locked){sessionStorage.setItem(sessionKey.current,"started");markTokenActive(tokenId);}},[phase,locked]);
+  useEffect(()=>{if(phase!=="active")return;const h=()=>{sessionStorage.setItem(sessionKey.current,"abandoned");const stats={totalTime:log.length>0?Date.now()-log[0].ts:0,typed:log.filter(e=>e.custom).length,clicked:log.filter(e=>!e.custom&&e.a!=="continue").length,passed:log.filter(e=>e.a==="[passed]").length,avgTime:log.length>0?Math.round(log.reduce((s,e)=>s+e.timing,0)/log.length/1000):0};savePartialSession(sid.current,stats,"tab_closed");};window.addEventListener("beforeunload",h);return()=>window.removeEventListener("beforeunload",h);},[phase]);
 
-  const resetIdle=useCallback(()=>{if(phase!=="active"||locked)return;setIdleWarning(false);clearTimeout(idleTimer.current);clearTimeout(lockTimer.current);idleTimer.current=setTimeout(()=>{setIdleWarning(true);lockTimer.current=setTimeout(()=>{sessionStorage.setItem(sessionKey.current,"idle_locked");setLocked(true);setIdleWarning(false);},60000);},600000);},[phase,locked]);
+  const resetIdle=useCallback(()=>{if(phase!=="active"||locked)return;setIdleWarning(false);clearTimeout(idleTimer.current);clearTimeout(lockTimer.current);idleTimer.current=setTimeout(()=>{setIdleWarning(true);lockTimer.current=setTimeout(()=>{sessionStorage.setItem(sessionKey.current,"idle_locked");setLocked(true);setIdleWarning(false);const stats={totalTime:log.length>0?Date.now()-log[0].ts:0,typed:log.filter(e=>e.custom).length,clicked:log.filter(e=>!e.custom&&e.a!=="continue").length,passed:log.filter(e=>e.a==="[passed]").length,avgTime:log.length>0?Math.round(log.reduce((s,e)=>s+e.timing,0)/log.length/1000):0};savePartialSession(sid.current,stats,"idle_timeout");},60000);},600000);},[phase,locked]);
   useEffect(()=>{if(phase!=="active")return;resetIdle();const events=["keydown","mousedown","mousemove","touchstart","scroll"];events.forEach(e=>window.addEventListener(e,resetIdle));return()=>{events.forEach(e=>window.removeEventListener(e,resetIdle));clearTimeout(idleTimer.current);clearTimeout(lockTimer.current);};},[phase,resetIdle]);
 
   const cur=Q[cid];const progress=Math.min(((Q_ORDER.indexOf(cid)+1)/TOTAL_Q)*100,100);

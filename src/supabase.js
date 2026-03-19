@@ -12,8 +12,12 @@ export async function validateToken(token) {
   if (data.status === 'completed') return { valid: false, reason: 'completed' }
   if (data.status === 'active') return { valid: false, reason: 'completed' }
   if (data.status === 'expired' || new Date(data.expires_at) < new Date()) return { valid: false, reason: 'expired' }
-  await supabase.from('tl_tokens').update({ status: 'active' }).eq('id', data.id)
   return { valid: true, data }
+}
+
+export async function markTokenActive(tokenId) {
+  if (!tokenId) return
+  return supabase.from('tl_tokens').update({ status: 'active' }).eq('id', tokenId)
 }
 
 export async function saveLogEntry(sid, e) {
@@ -26,6 +30,17 @@ export async function saveTrapResult(sid, t) {
 
 export async function createSession(sid, tid, name) {
   return supabase.from('tl_sessions').insert({ session_id: sid, token_id: tid, candidate_name: name })
+}
+
+export async function savePartialSession(sid, stats, reason) {
+  await supabase.from('tl_sessions').update({
+    completed_at: new Date().toISOString(),
+    total_time_ms: stats.totalTime,
+    stats: { ...stats, abandoned: true, abandonReason: reason },
+    ai_summary: `SESSION INCOMPLETE (${reason}). Answered ${stats.typed + stats.clicked} of ~30 questions. Typed: ${stats.typed}, Clicked: ${stats.clicked}, Passed: ${stats.passed}. Average response time: ${stats.avgTime}s.`,
+    hire_lean: 'incomplete'
+  }).eq('session_id', sid)
+  try { await fetch('/api/notify-completion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: sid }) }) } catch (e) {}
 }
 
 export async function completeSession(sid, stats, ai) {
